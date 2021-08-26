@@ -15,6 +15,8 @@
  */
 package am.ik.yavi.core;
 
+import am.ik.yavi.hack.ViolatedValueParam;
+import am.ik.yavi.hack.ViolationParam;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -268,14 +270,26 @@ public class Validator<T> implements ValidatorSubset<T> {
 						.violatedValue(v);
 				if (violated.isPresent()) {
 					final ViolatedValue violatedValue = violated.get();
-					final String name = this.prefix
-							+ this.indexedName(predicates.name(), collectionName, index);
-					final Object[] args = constraintPredicate.args().get();
-					violations.add(new ConstraintViolation(name,
-							constraintPredicate.messageKey(),
-							constraintPredicate.defaultMessageFormat(),
-							pad(name, args, violatedValue), this.messageFormatter,
-							locale));
+					if (violatedValue instanceof ViolatedValueParam) {
+						final ViolationParam param = ((ViolatedValueParam) violatedValue).violationParam();
+						final String name = this.prefix
+								+ this.indexedName(param.name(), collectionName, index);
+						final Object[] args = param.args().get();
+						violations.add(new ConstraintViolation(name,
+								param.messageKey(),
+								param.defaultMessageFormat(),
+								pad(name, args, violatedValue), this.messageFormatter,
+								locale));
+					} else {
+						final String name = this.prefix
+								+ this.indexedName(predicates.name(), collectionName, index);
+						final Object[] args = constraintPredicate.args().get();
+						violations.add(new ConstraintViolation(name,
+								constraintPredicate.messageKey(),
+								constraintPredicate.defaultMessageFormat(),
+								pad(name, args, violatedValue), this.messageFormatter,
+								locale));
+					}
 					if (this.failFast) {
 						return violations;
 					}
